@@ -37,4 +37,16 @@ class BookControllerTest {
         assertEquals(null, "9781234567890", Objects.requireNonNull(response.getBody()).getIsbn());
         verify(bookService, times(1)).addBook(any(Book.class));
     }
+
+    @Test
+    public void testUpdateBook() {
+        Book updatedBook = new Book("9781234567890", "TDD - Updated", "Benjamin Aubert", "Aubert Library", Format.BD, false);
+        when(bookService.updateBook(eq("9781234567890"), any())).thenReturn(updatedBook);
+
+        ResponseEntity<Book> response = controller.updateBook("9781234567890", updatedBook);
+
+        assertEquals(null, "200 UPDATED", response.getStatusCode().toString());
+        assertEquals(null, Format.BD, response.getBody().getFormat());
+        verify(bookService, times(1)).updateBook(eq("9781234567890"), any());
+    }
 }
