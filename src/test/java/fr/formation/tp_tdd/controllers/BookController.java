@@ -62,4 +62,24 @@ class BookControllerTest {
         verify(bookService, times(1)).updateBook(eq("9781234567890"), any());
     }
 
+    @Test
+    public void testDeleteBook() {
+        doNothing().when(bookService).deleteBook("9781234567890");
+
+        ResponseEntity<Void> response = controller.deleteBook("9781234567890");
+
+        assertEquals(null,"204", response.getStatusCode().toString());
+        verify(bookService, times(1)).deleteBook("9781234567890");
+    }
+
+    @Test
+    public void testDeleteBookNotFound() {
+        doThrow(new BookNotFoundException("Book not found")).when(bookService).deleteBook("9781234567890");
+
+        ResponseEntity<Void> response = controller.deleteBook("9781234567890");
+
+        assertEquals(null, "404", response.getStatusCode().toString());
+        verify(bookService, times(1)).deleteBook("9781234567890");
+    }
+
 }
