@@ -116,4 +116,35 @@ class ReservationControllerTest {
         assertEquals("La date d'expiration dépasse la limite de 4 mois.", response.getBody());
         verify(reservationService, times(1)).createReservation("MEM123", "9781234567890", today, expiration);
     }
+
+    @Test
+    public void testEndReservationSuccess() {
+        doNothing().when(reservationService).endReservation(1L);
+
+        ResponseEntity<?> response = controller.endReservation(1L);
+
+        assertEquals(204, response.getStatusCodeValue());
+        verify(reservationService, times(1)).endReservation(1L);
+    }
+
+    @Test
+    public void testEndReservationNotFound() {
+        doThrow(new ReservationNotFoundException("Réservation non trouvée")).when(reservationService).endReservation(999L);
+
+        ResponseEntity<?> response = controller.endReservation(999L);
+
+        assertEquals(404, response.getStatusCodeValue());
+        assertEquals("Réservation non trouvée", response.getBody());
+        verify(reservationService, times(1)).endReservation(999L);
+    }
+
+    @Test
+    public void testEndAlreadyEndedReservation() {
+        doNothing().when(reservationService).endReservation(2L);
+
+        ResponseEntity<?> response = controller.endReservation(2L);
+
+        assertEquals(204, response.getStatusCodeValue());
+        verify(reservationService, times(1)).endReservation(2L);
+    }
 }
