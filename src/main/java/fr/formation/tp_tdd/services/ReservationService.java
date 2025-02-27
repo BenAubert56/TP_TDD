@@ -53,4 +53,8 @@ public class ReservationService implements IReservationService {
         reservation.setActive(false);
         reservationRepository.save(reservation);
     }
+
+    public List<Reservation> getOpenReservations() {
+        return reservationRepository.findByActiveTrue();
+    }
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/reservations")
@@ -38,5 +39,11 @@ public class ReservationController {
         } catch (ReservationNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/open")
+    public ResponseEntity<List<Reservation>> getOpenReservations() {
+        List<Reservation> openReservations = reservationService.getOpenReservations();
+        return ResponseEntity.ok(openReservations);
     }
 }
