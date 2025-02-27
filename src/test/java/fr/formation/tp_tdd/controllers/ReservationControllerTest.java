@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,6 +25,8 @@ class ReservationControllerTest {
     Member member;
     Book book;
     Reservation reservation;
+    Reservation reservation2;
+    Reservation reservation3;
 
     @BeforeEach
     public void init() {
@@ -34,6 +38,9 @@ class ReservationControllerTest {
         member = new Member(1L, "MEM123", "John", "Doe", LocalDate.of(1990, 5, 10), Gender.HOMME);
         book = new Book("9781234567890", "TDD", "Benjamin Aubert", "Aubert Library", Format.GRAND_FORMAT, true);
         reservation = new Reservation(1L, member, book, LocalDate.now(), LocalDate.now().plusMonths(4), true);
+        reservation2 = new Reservation(2L, member, book, LocalDate.now().minusDays(5), LocalDate.now().plusMonths(3), true);
+        reservation3 = new Reservation(3L, member, book, LocalDate.now(), LocalDate.now().plusMonths(1), true);
+
     }
 
     @Test
@@ -143,5 +150,29 @@ class ReservationControllerTest {
 
         assertEquals(204, response.getStatusCodeValue());
         verify(reservationService, times(1)).endReservation(2L);
+    }
+
+    @Test
+    public void testGetOpenReservationsSuccess() {
+        when(reservationService.getOpenReservations()).thenReturn(Arrays.asList(reservation, reservation2, reservation3));
+
+        ResponseEntity<List<Reservation>> response = controller.getOpenReservations();
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertNotNull(response.getBody());
+        assertEquals(3, response.getBody().size());
+        verify(reservationService, times(1)).getOpenReservations();
+    }
+
+    @Test
+    public void testGetOpenReservationsEmptyList() {
+        when(reservationService.getOpenReservations()).thenReturn(List.of());
+
+        ResponseEntity<List<Reservation>> response = controller.getOpenReservations();
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+        verify(reservationService, times(1)).getOpenReservations();
     }
 }
