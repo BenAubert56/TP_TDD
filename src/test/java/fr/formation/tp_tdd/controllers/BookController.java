@@ -194,7 +194,7 @@ class BookControllerTest {
 
     @Test
     public void testFindBookByIsbn() {
-        when(bookService.findByIsbn("9781234567890")).thenReturn(Optional.of(book1));
+        when(bookService.findByIsbn("9781234567890")).thenReturn(Optional.of(book));
 
         ResponseEntity<Book> response = controller.findByIsbn("9781234567890");
 
@@ -215,7 +215,7 @@ class BookControllerTest {
 
     @Test
     public void testFindBooksByTitle() {
-        when(bookService.findByTitle("TDD")).thenReturn(Arrays.asList(book1, book2));
+        when(bookService.findByTitle("TDD")).thenReturn(Arrays.asList(book, book2));
 
         ResponseEntity<List<Book>> response = controller.findByTitle("TDD");
 
@@ -237,7 +237,7 @@ class BookControllerTest {
 
     @Test
     public void testFindBooksByAuthor() {
-        when(bookService.findByAuthor("Benjamin Doe")).thenReturn(Arrays.asList(book, book2));
+        when(bookService.findByAuthor("Benjamin Aubert")).thenReturn(Arrays.asList(book, book2));
 
         ResponseEntity<List<Book>> response = controller.findByAuthor("Benjamin Aubert");
 

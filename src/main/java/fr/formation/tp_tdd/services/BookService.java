@@ -9,6 +9,7 @@ import fr.formation.tp_tdd.repositories.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -97,5 +98,20 @@ public class BookService implements IBookService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @Override
+    public Optional<Book> findByIsbn(String isbn) {
+        return bookRepository.findByIsbn(isbn);
+    }
+
+    @Override
+    public List<Book> findByTitle(String title) {
+        return bookRepository.findByTitleContainingIgnoreCase(title);
+    }
+
+    @Override
+    public List<Book> findByAuthor(String author) {
+        return bookRepository.findByAuthorContainingIgnoreCase(author);
     }
 }

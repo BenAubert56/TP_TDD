@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Setter
 @RestController
 @RequestMapping("/books")
@@ -52,5 +54,24 @@ public class BookController {
         } catch (BookNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+    }
+
+    @GetMapping("/isbn/{isbn}")
+    public ResponseEntity<Book> findByIsbn(@PathVariable String isbn) {
+        return bookService.findByIsbn(isbn)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @GetMapping("/title/{title}")
+    public ResponseEntity<List<Book>> findByTitle(@PathVariable String title) {
+        List<Book> books = bookService.findByTitle(title);
+        return ResponseEntity.ok(books);
+    }
+
+    @GetMapping("/author/{author}")
+    public ResponseEntity<List<Book>> findByAuthor(@PathVariable String author) {
+        List<Book> books = bookService.findByAuthor(author);
+        return ResponseEntity.ok(books);
     }
 }
