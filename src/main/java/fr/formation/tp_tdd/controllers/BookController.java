@@ -35,8 +35,12 @@ public class BookController {
         try {
             Book updatedBook = bookService.updateBook(isbn, book);
             return ResponseEntity.ok(updatedBook);
+        } catch (InvalidIsbnException | MissingBookInformationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (DuplicateBookException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (BookNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 }

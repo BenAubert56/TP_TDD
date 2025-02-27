@@ -42,20 +42,42 @@ public class BookService implements IBookService {
 
     @Override
     public Book updateBook(String isbn, Book book) {
-        Optional<Book> existingBook = bookRepository.findById(isbn);
-
-        if (existingBook.isPresent()) {
-            Book updatedBook = existingBook.get();
-            updatedBook.setTitle(book.getTitle());
-            updatedBook.setAuthor(book.getAuthor());
-            updatedBook.setPublisher(book.getPublisher());
-            updatedBook.setFormat(book.getFormat());
-            updatedBook.setAvailable(book.isAvailable());
-            return bookRepository.save(updatedBook);
-        } else {
-            throw new BookNotFoundException("Book not found");
+        IsbnService validator = new IsbnService();
+        if (!validator.validateIsbn(book.getIsbn())) {
+            throw new InvalidIsbnException("ISBN invalide");
         }
+
+        Optional<Book> existingBookOpt = bookRepository.findById(isbn);
+        if (existingBookOpt.isEmpty()) {
+            throw new BookNotFoundException("Le livre n'a pas été trouvé");
+        }
+
+        Book existingBook = existingBookOpt.get();
+
+        if (!isbn.equals(book.getIsbn())) {
+            throw new DuplicateBookException("Le livre existe déjà");
+        }
+
+        if (book.getTitle() == null || book.getAuthor() == null || book.getPublisher() == null || book.getFormat() == null) {
+            Book fetchedBook = fetchBookInfoFromWebService(isbn);
+            if (fetchedBook == null) {
+                throw new MissingBookInformationException("Le livre n'a pas été trouvé dans le référentiel");
+            }
+            if (book.getTitle() == null) book.setTitle(fetchedBook.getTitle());
+            if (book.getAuthor() == null) book.setAuthor(fetchedBook.getAuthor());
+            if (book.getPublisher() == null) book.setPublisher(fetchedBook.getPublisher());
+            if (book.getFormat() == null) book.setFormat(fetchedBook.getFormat());
+        }
+
+        existingBook.setTitle(book.getTitle());
+        existingBook.setAuthor(book.getAuthor());
+        existingBook.setPublisher(book.getPublisher());
+        existingBook.setFormat(book.getFormat());
+        existingBook.setAvailable(book.isAvailable());
+
+        return bookRepository.save(existingBook);
     }
+
 
     @Override
     public Book fetchBookInfoFromWebService(String isbn) {
