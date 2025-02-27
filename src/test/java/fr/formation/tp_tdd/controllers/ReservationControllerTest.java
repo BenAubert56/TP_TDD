@@ -1,101 +1,119 @@
 package fr.formation.tp_tdd.controllers;
 
-import fr.formation.tp_tdd.enums.Format;
 import fr.formation.tp_tdd.exceptions.BookNotFoundException;
+import fr.formation.tp_tdd.exceptions.InvalidReservationDateException;
+import fr.formation.tp_tdd.exceptions.MaxReservationsExceededException;
+import fr.formation.tp_tdd.exceptions.MemberNotFoundException;
 import fr.formation.tp_tdd.models.Book;
-import fr.formation.tp_tdd.repositories.BookRepository;
+import fr.formation.tp_tdd.models.Member;
+import fr.formation.tp_tdd.models.Reservation;
+import fr.formation.tp_tdd.enums.Gender;
+import fr.formation.tp_tdd.enums.Format;
+import fr.formation.tp_tdd.services.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ReservationControllerTest {
+    ReservationController controller;
     ReservationService reservationService;
-    ReservationRepository reservationRepository;
-    MemberRepository memberRepository;
-    BookRepository bookRepository;
 
     Member member;
     Book book;
-    Reservation res1, res2, res3;
+    Reservation reservation;
 
     @BeforeEach
     public void init() {
-        reservationRepository = mock(ReservationRepository.class);
-        memberRepository = mock(MemberRepository.class);
-        bookRepository = mock(BookRepository.class);
-        reservationService = new ReservationService(reservationRepository, memberRepository, bookRepository);
+        // Mock the service
+        reservationService = mock(ReservationService.class);
+        controller = new ReservationController(reservationService);
 
-        member = new Member(1L, "MEM123", "John", "Doe", LocalDate.of(1990, 5, 10), Gender.MALE);
+        // Create test member, book, and reservation
+        member = new Member(1L, "MEM123", "John", "Doe", LocalDate.of(1990, 5, 10), Gender.HOMME);
         book = new Book("9781234567890", "TDD", "Benjamin Aubert", "Aubert Library", Format.GRAND_FORMAT, true);
-        res1 = new Reservation(1L, member, book, LocalDate.now().minusDays(10), LocalDate.now().plusMonths(4), true);
-        res2 = new Reservation(2L, member, book, LocalDate.now().minusDays(5), LocalDate.now().plusMonths(4), true);
-        res3 = new Reservation(3L, member, book, LocalDate.now(), LocalDate.now().plusMonths(4), true);
+        reservation = new Reservation(1L, member, book, LocalDate.now(), LocalDate.now().plusMonths(4), true);
     }
 
     @Test
     public void testCreateReservationSuccess() {
-        when(memberRepository.findByCode("MEM123")).thenReturn(member);
-        when(bookRepository.findById("9781234567890")).thenReturn(Optional.of(book));
-        when(reservationRepository.findByMemberAndActiveTrue(member)).thenReturn(List.of());
-        when(reservationRepository.save(any())).thenReturn(new Reservation(1L, member, book, LocalDate.now(), LocalDate.now().plusMonths(4), true));
+        LocalDate today = LocalDate.now();
+        LocalDate expiration = today.plusMonths(3);
 
-        Reservation reservation = reservationService.createReservation("MEM123", "9781234567890");
+        when(reservationService.createReservation("MEM123", "9781234567890", today, expiration))
+                .thenReturn(reservation);
 
-        assertNotNull(reservation);
-        assertEquals(member, reservation.getMember());
-        assertEquals(book, reservation.getBook());
-        assertEquals(LocalDate.now().plusMonths(4), reservation.getExpirationDate());
-        assertTrue(reservation.isActive());
+        ResponseEntity<?> response = controller.createReservation("MEM123", "9781234567890", today, expiration);
 
-        verify(reservationRepository, times(1)).save(any());
+        assertEquals(201, response.getStatusCodeValue());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody() instanceof Reservation);
+        assertEquals(reservation, response.getBody());
+
+        verify(reservationService, times(1)).createReservation("MEM123", "9781234567890", today, expiration);
     }
 
     @Test
     public void testCreateReservationMemberHasMaxReservations() {
-        when(memberRepository.findByCode("MEM123")).thenReturn(member);
-        when(bookRepository.findById("9781234567890")).thenReturn(Optional.of(book));
-        when(reservationRepository.findByMemberAndActiveTrue(member)).thenReturn(List.of(res1, res2, res3));
+        LocalDate today = LocalDate.now();
+        LocalDate expiration = today.plusMonths(3);
 
-        assertThrows(MaxReservationsExceededException.class, () -> reservationService.createReservation("MEM123", "9781234567890"));
+        when(reservationService.createReservation("MEM123", "9781234567890", today, expiration))
+                .thenThrow(new MaxReservationsExceededException("L'adhérent a déjà 3 réservations actives"));
 
-        verify(reservationRepository, never()).save(any());
+        ResponseEntity<?> response = controller.createReservation("MEM123", "9781234567890", today, expiration);
+
+        assertEquals(400, response.getStatusCodeValue());
+        assertEquals("L'adhérent a déjà 3 réservations actives", response.getBody());
+        verify(reservationService, times(1)).createReservation("MEM123", "9781234567890", today, expiration);
     }
 
     @Test
     public void testCreateReservationBookNotFound() {
-        when(memberRepository.findByCode("MEM123")).thenReturn(member);
-        when(bookRepository.findById("9781234567890")).thenReturn(Optional.empty());
+        LocalDate today = LocalDate.now();
+        LocalDate expiration = today.plusMonths(3);
 
-        assertThrows(BookNotFoundException.class, () -> reservationService.createReservation("MEM123", "9781234567890"));
+        when(reservationService.createReservation("MEM123", "9781234567890", today, expiration))
+                .thenThrow(new BookNotFoundException("Livre non trouvé"));
 
-        verify(reservationRepository, never()).save(any());
+        ResponseEntity<?> response = controller.createReservation("MEM123", "9781234567890", today, expiration);
+
+        assertEquals(404, response.getStatusCodeValue());
+        assertEquals("Livre non trouvé", response.getBody());
+        verify(reservationService, times(1)).createReservation("MEM123", "9781234567890", today, expiration);
     }
 
     @Test
     public void testCreateReservationMemberNotFound() {
-        when(memberRepository.findByCode("MEM123")).thenReturn(null);
+        LocalDate today = LocalDate.now();
+        LocalDate expiration = today.plusMonths(3);
 
-        assertThrows(MemberNotFoundException.class, () -> reservationService.createReservation("MEM123", "9781234567890"));
+        when(reservationService.createReservation("MEM123", "9781234567890", today, expiration))
+                .thenThrow(new MemberNotFoundException("Adhérent non trouvé"));
 
-        verify(reservationRepository, never()).save(any());
+        ResponseEntity<?> response = controller.createReservation("MEM123", "9781234567890", today, expiration);
+
+        assertEquals(404, response.getStatusCodeValue());
+        assertEquals("Adhérent non trouvé", response.getBody());
+        verify(reservationService, times(1)).createReservation("MEM123", "9781234567890", today, expiration);
     }
 
     @Test
     public void testCreateReservationExpirationDateExceedsLimit() {
-        when(memberRepository.findByCode("MEM123")).thenReturn(member);
-        when(bookRepository.findById("9781234567890")).thenReturn(Optional.of(book));
-        when(reservationRepository.findByMemberAndActiveTrue(member)).thenReturn(List.of());
+        LocalDate today = LocalDate.now();
+        LocalDate expiration = today.plusMonths(5); // Exceeds the limit
 
-        Reservation reservation = reservationService.createReservation("MEM123", "9781234567890");
+        when(reservationService.createReservation("MEM123", "9781234567890", today, expiration))
+                .thenThrow(new InvalidReservationDateException("La date d'expiration dépasse la limite de 4 mois."));
 
-        assertNotNull(reservation);
-        assertEquals(LocalDate.now().plusMonths(4), reservation.getExpirationDate());
+        ResponseEntity<?> response = controller.createReservation("MEM123", "9781234567890", today, expiration);
+
+        assertEquals(400, response.getStatusCodeValue());
+        assertEquals("La date d'expiration dépasse la limite de 4 mois.", response.getBody());
+        verify(reservationService, times(1)).createReservation("MEM123", "9781234567890", today, expiration);
     }
-
 }
