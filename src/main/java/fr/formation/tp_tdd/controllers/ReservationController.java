@@ -1,17 +1,11 @@
 package fr.formation.tp_tdd.controllers;
 
-import fr.formation.tp_tdd.exceptions.BookNotFoundException;
-import fr.formation.tp_tdd.exceptions.InvalidReservationDateException;
-import fr.formation.tp_tdd.exceptions.MaxReservationsExceededException;
-import fr.formation.tp_tdd.exceptions.MemberNotFoundException;
+import fr.formation.tp_tdd.exceptions.*;
 import fr.formation.tp_tdd.models.Reservation;
 import fr.formation.tp_tdd.services.ReservationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
@@ -33,6 +27,16 @@ public class ReservationController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (MaxReservationsExceededException | InvalidReservationDateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{reservationId}")
+    public ResponseEntity<?> endReservation(@PathVariable Long reservationId) {
+        try {
+            reservationService.endReservation(reservationId);
+            return ResponseEntity.noContent().build();
+        } catch (ReservationNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 }

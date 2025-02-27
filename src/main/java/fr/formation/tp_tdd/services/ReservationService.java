@@ -1,9 +1,6 @@
 package fr.formation.tp_tdd.services;
 
-import fr.formation.tp_tdd.exceptions.BookNotFoundException;
-import fr.formation.tp_tdd.exceptions.InvalidReservationDateException;
-import fr.formation.tp_tdd.exceptions.MaxReservationsExceededException;
-import fr.formation.tp_tdd.exceptions.MemberNotFoundException;
+import fr.formation.tp_tdd.exceptions.*;
 import fr.formation.tp_tdd.models.Book;
 import fr.formation.tp_tdd.models.Member;
 import fr.formation.tp_tdd.models.Reservation;
@@ -14,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReservationService implements IReservationService {
@@ -48,5 +44,13 @@ public class ReservationService implements IReservationService {
         Reservation reservation = new Reservation(null, member, book, reservationDate, expirationDate, true);
 
         return reservationRepository.save(reservation);
+    }
+
+    public void endReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ReservationNotFoundException("Réservation non trouvée"));
+
+        reservation.setActive(false);
+        reservationRepository.save(reservation);
     }
 }
