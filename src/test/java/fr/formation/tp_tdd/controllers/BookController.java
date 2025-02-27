@@ -83,7 +83,7 @@ class BookControllerTest {
         Book incompleteBook = new Book("9781234567890", null, null, null, null, true);
 
         when(bookService.fetchBookInfoFromWebService("9781234567890")).thenReturn(null);
-        when(bookService.addBook(incompleteBook)).thenThrow(new MissingBookInformationException("Book details could not be retrieved"));
+        when(bookService.addBook(incompleteBook)).thenThrow(new MissingBookInformationException("Le livre n'a pas été trouvé dans le référentiel"));
 
         ResponseEntity<Book> response = controller.addBook(incompleteBook);
 
@@ -111,6 +111,57 @@ class BookControllerTest {
         ResponseEntity<Book> response = controller.updateBook("9781234567890", updatedBook);
 
         assertEquals(null, "404 NOT_FOUND", response.getStatusCode().toString());
+        verify(bookService, times(1)).updateBook(eq("9781234567890"), any());
+    }
+
+    @Test
+    public void testUpdateBookInvalidIsbn() {
+        Book updatedBook = new Book("1234", "Invalid ISBN Book", "Author", "Publisher", Format.GRAND_FORMAT, false);
+        when(bookService.updateBook(eq("1234"), any())).thenThrow(new InvalidIsbnException("ISBN invalide"));
+
+        ResponseEntity<Book> response = controller.updateBook("1234", updatedBook);
+
+        assertEquals(null, "400 BAD_REQUEST", response.getStatusCode().toString());
+        verify(bookService, times(1)).updateBook(eq("1234"), any());
+    }
+
+    @Test
+    public void testUpdateBookDuplicateIsbn() {
+        Book updatedBook = new Book("9789876543210", "Updated Book", "Another Author", "Another Publisher", Format.BROCHE, true);
+
+        when(bookService.updateBook(eq("9781234567890"), any()))
+                .thenThrow(new DuplicateBookException("Le livre existe déjà"));
+
+        ResponseEntity<Book> response = controller.updateBook("9781234567890", updatedBook);
+
+        assertEquals(null, "409 CONFLICT", response.getStatusCode().toString());
+        verify(bookService, times(1)).updateBook(eq("9781234567890"), any());
+    }
+
+
+    @Test
+    public void testUpdateBookMissingFields() {
+        Book updatedBook = new Book("9781234567890", null, "Author", null, Format.GRAND_FORMAT, false);
+        when(bookService.updateBook(eq("9781234567890"), any()))
+                .thenThrow(new MissingBookInformationException("Tous les champs doivent être renseignés"));
+
+        ResponseEntity<Book> response = controller.updateBook("9781234567890", updatedBook);
+
+        assertEquals(null, "400 BAD_REQUEST", response.getStatusCode().toString());
+        verify(bookService, times(1)).updateBook(eq("9781234567890"), any());
+    }
+
+    @Test
+    public void testUpdateBookFetchFromWebService() {
+        Book incompleteBook = new Book("9781234567890", null, null, null, null, true);
+
+        when(bookService.fetchBookInfoFromWebService("9781234567890")).thenReturn(book);
+        when(bookService.updateBook(eq("9781234567890"), any())).thenReturn(book);
+
+        ResponseEntity<Book> response = controller.updateBook("9781234567890", incompleteBook);
+
+        assertEquals(null, "200 OK", response.getStatusCode().toString());
+        assertEquals(null,"TDD", response.getBody().getTitle());
         verify(bookService, times(1)).updateBook(eq("9781234567890"), any());
     }
 
