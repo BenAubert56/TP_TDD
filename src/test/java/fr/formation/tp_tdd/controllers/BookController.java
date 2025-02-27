@@ -40,6 +40,55 @@ class BookControllerTest {
     }
 
     @Test
+    public void testAddBookInvalidIsbn() {
+        Book invalidBook = new Book("1234", "Invalid ISBN Book", "Author", "Publisher", Format.GRAND_FORMAT, true);
+
+        when(bookService.addBook(any())).thenThrow(new InvalidIsbnException("ISBN invalide"));
+
+        ResponseEntity<Book> response = controller.addBook(invalidBook);
+
+        assertEquals(null, "400 BAD_REQUEST", response.getStatusCode().toString());
+        verify(bookService, times(1)).addBook(any());
+    }
+
+    @Test
+    public void testAddDuplicateBook() {
+        when(bookService.addBook(any())).thenThrow(new DuplicateBookException("Le livre existe déjà"));
+
+        ResponseEntity<Book> response = controller.addBook(book);
+
+        assertEquals(null, "400 CONFLICT", response.getStatusCode().toString());
+        verify(bookService, times(1)).addBook(any());
+    }
+
+    @Test
+    public void testAddBookFetchFromWebService() {
+        Book incompleteBook = new Book("9781234567890", null, null, null, null, true);
+
+        when(bookService.fetchBookInfoFromWebService("9781234567890")).thenReturn(book);
+        when(bookService.addBook(incompleteBook)).thenReturn(completeBook);
+
+        ResponseEntity<Book> response = controller.addBook(incompleteBook);
+
+        assertEquals(null, "201 CREATED", response.getStatusCode().toString());
+        assertEquals("TDD in Action", response.getBody().getTitle()); // Info fetched from web service
+        verify(bookService, times(1)).addBook(incompleteBook);
+    }
+
+    @Test
+    public void testAddBookWebServiceFailure() {
+        Book incompleteBook = new Book("9781234567890", null, null, null, null, true);
+
+        when(bookService.fetchBookInfoFromWebService("9781234567890")).thenReturn(null);
+        when(bookService.addBook(incompleteBook)).thenThrow(new MissingBookInformationException("Book details could not be retrieved"));
+
+        ResponseEntity<Book> response = controller.addBook(incompleteBook);
+
+        assertEquals(null, "400 BAD_REQUEST", response.getStatusCode().toString());
+        verify(bookService, times(1)).addBook(incompleteBook);
+    }
+
+    @Test
     public void testUpdateBookOk() {
         Book updatedBook = new Book("9781234567890", "TDD - Updated", "Benjamin Aubert", "Aubert Library", Format.BD, false);
         when(bookService.updateBook(eq("9781234567890"), any())).thenReturn(updatedBook);
