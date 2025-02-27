@@ -175,4 +175,38 @@ class ReservationControllerTest {
         assertTrue(response.getBody().isEmpty());
         verify(reservationService, times(1)).getOpenReservations();
     }
+
+    @Test
+    public void testGetReservationHistorySuccess() {
+        when(reservationService.getReservationHistory("MEM123")).thenReturn(Arrays.asList(reservation, reservation2, reservation3));
+
+        ResponseEntity<List<Reservation>> response = controller.getReservationHistory("MEM123");
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertNotNull(response.getBody());
+        assertEquals(3, response.getBody().size());
+        verify(reservationService, times(1)).getReservationHistory("MEM123");
+    }
+
+    @Test
+    public void testGetReservationHistoryEmptyList() {
+        when(reservationService.getReservationHistory("MEM123")).thenReturn(List.of());
+
+        ResponseEntity<List<Reservation>> response = controller.getReservationHistory("MEM123");
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+        verify(reservationService, times(1)).getReservationHistory("MEM123");
+    }
+
+    @Test
+    public void testGetReservationHistoryMemberNotFound() {
+        when(reservationService.getReservationHistory("UNKNOWN_MEMBER")).thenThrow(new MemberNotFoundException("Adhérent non trouvé"));
+
+        ResponseEntity<List<Reservation>> response = controller.getReservationHistory("UNKNOWN_MEMBER");
+
+        assertEquals(404, response.getStatusCodeValue());
+        verify(reservationService, times(1)).getReservationHistory("UNKNOWN_MEMBER");
+    }
 }
