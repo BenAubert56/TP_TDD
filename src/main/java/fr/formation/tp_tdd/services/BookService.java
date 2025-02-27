@@ -78,6 +78,14 @@ public class BookService implements IBookService {
         return bookRepository.save(existingBook);
     }
 
+    @Override
+    public void deleteBook(String isbn) {
+        if (!bookRepository.existsById(isbn)) {
+            throw new BookNotFoundException("Le livre n'a pas été trouvé");
+        }
+
+        bookRepository.deleteById(isbn);
+    }
 
     @Override
     public Book fetchBookInfoFromWebService(String isbn) {

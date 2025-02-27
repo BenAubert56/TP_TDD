@@ -171,17 +171,17 @@ class BookControllerTest {
 
         ResponseEntity<Void> response = controller.deleteBook("9781234567890");
 
-        assertEquals(null,"204", response.getStatusCode().toString());
+        assertEquals(null,"204 NO_CONTENT", response.getStatusCode().toString());
         verify(bookService, times(1)).deleteBook("9781234567890");
     }
 
     @Test
     public void testDeleteBookNotFound() {
-        doThrow(new BookNotFoundException("Book not found")).when(bookService).deleteBook("9781234567890");
+        doThrow(new BookNotFoundException("Le livre n'a pas été trouvé")).when(bookService).deleteBook("9781234567890");
 
         ResponseEntity<Void> response = controller.deleteBook("9781234567890");
 
-        assertEquals(null, "404", response.getStatusCode().toString());
+        assertEquals(null, "404 NOT_FOUND", response.getStatusCode().toString());
         verify(bookService, times(1)).deleteBook("9781234567890");
     }
 
