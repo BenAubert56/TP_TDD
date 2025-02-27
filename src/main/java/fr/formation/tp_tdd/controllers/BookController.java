@@ -1,6 +1,9 @@
 package fr.formation.tp_tdd.controllers;
 
 import fr.formation.tp_tdd.exceptions.BookNotFoundException;
+import fr.formation.tp_tdd.exceptions.DuplicateBookException;
+import fr.formation.tp_tdd.exceptions.InvalidIsbnException;
+import fr.formation.tp_tdd.exceptions.MissingBookInformationException;
 import fr.formation.tp_tdd.models.Book;
 import fr.formation.tp_tdd.services.BookService;
 import lombok.Setter;
@@ -17,8 +20,14 @@ public class BookController {
 
     @PostMapping
     public ResponseEntity<Book> addBook(@RequestBody Book book) {
-        Book savedBook = bookService.addBook(book);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedBook);
+        try {
+            Book savedBook = bookService.addBook(book);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedBook);
+        } catch (InvalidIsbnException | MissingBookInformationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (DuplicateBookException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
     }
 
     @PutMapping("/{isbn}")

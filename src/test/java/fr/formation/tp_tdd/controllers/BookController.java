@@ -2,6 +2,9 @@ package fr.formation.tp_tdd.controllers;
 
 import fr.formation.tp_tdd.enums.Format;
 import fr.formation.tp_tdd.exceptions.BookNotFoundException;
+import fr.formation.tp_tdd.exceptions.DuplicateBookException;
+import fr.formation.tp_tdd.exceptions.InvalidIsbnException;
+import fr.formation.tp_tdd.exceptions.MissingBookInformationException;
 import fr.formation.tp_tdd.models.Book;
 import fr.formation.tp_tdd.services.BookService;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +60,7 @@ class BookControllerTest {
 
         ResponseEntity<Book> response = controller.addBook(book);
 
-        assertEquals(null, "400 CONFLICT", response.getStatusCode().toString());
+        assertEquals(null, "409 CONFLICT", response.getStatusCode().toString());
         verify(bookService, times(1)).addBook(any());
     }
 
@@ -66,12 +69,12 @@ class BookControllerTest {
         Book incompleteBook = new Book("9781234567890", null, null, null, null, true);
 
         when(bookService.fetchBookInfoFromWebService("9781234567890")).thenReturn(book);
-        when(bookService.addBook(incompleteBook)).thenReturn(completeBook);
+        when(bookService.addBook(incompleteBook)).thenReturn(book);
 
         ResponseEntity<Book> response = controller.addBook(incompleteBook);
 
         assertEquals(null, "201 CREATED", response.getStatusCode().toString());
-        assertEquals("TDD in Action", response.getBody().getTitle()); // Info fetched from web service
+        assertEquals(null, "TDD", response.getBody().getTitle());
         verify(bookService, times(1)).addBook(incompleteBook);
     }
 
