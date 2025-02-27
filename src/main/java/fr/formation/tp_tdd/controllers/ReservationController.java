@@ -46,4 +46,14 @@ public class ReservationController {
         List<Reservation> openReservations = reservationService.getOpenReservations();
         return ResponseEntity.ok(openReservations);
     }
+
+    @GetMapping("/history/{memberCode}")
+    public ResponseEntity<List<Reservation>> getReservationHistory(@PathVariable String memberCode) {
+        try {
+            List<Reservation> history = reservationService.getReservationHistory(memberCode);
+            return ResponseEntity.ok(history);
+        } catch (MemberNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 }

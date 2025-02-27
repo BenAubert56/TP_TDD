@@ -57,4 +57,11 @@ public class ReservationService implements IReservationService {
     public List<Reservation> getOpenReservations() {
         return reservationRepository.findByActiveTrue();
     }
+
+    public List<Reservation> getReservationHistory(String memberCode) {
+        Member member = memberRepository.findByCode(memberCode)
+                .orElseThrow(() -> new MemberNotFoundException("Adhérent non trouvé"));
+
+        return reservationRepository.findByMember(member);
+    }
 }

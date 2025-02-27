@@ -14,4 +14,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByMember(Member member);
     List<Reservation> findByExpirationDateBeforeAndActiveTrue(LocalDate date);
     List<Reservation> findByActiveTrue();
+
 }
