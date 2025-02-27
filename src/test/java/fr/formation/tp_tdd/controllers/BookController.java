@@ -11,7 +11,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -21,6 +24,8 @@ class BookControllerTest {
     BookController controller;
     BookService bookService;
     Book book;
+    Book book2;
+    Book book3;
 
     @BeforeEach
     public void init() {
@@ -29,6 +34,8 @@ class BookControllerTest {
 
         controller.setBookService(bookService);
         book = new Book("9781234567890", "TDD", "Benjamin Aubert", "Aubert Library", Format.GRAND_FORMAT, true);
+        book2 = new Book("9780987654321", "TDD for Beginners", "Benjamin Aubert", "Tech Books", Format.BD, true);
+        book3 = new Book("9781111111111", "Advanced Java", "John Doe", "Java Press", Format.BROCHE, true);
     }
 
     @Test
@@ -183,6 +190,71 @@ class BookControllerTest {
 
         assertEquals(null, "404 NOT_FOUND", response.getStatusCode().toString());
         verify(bookService, times(1)).deleteBook("9781234567890");
+    }
+
+    @Test
+    public void testFindBookByIsbn() {
+        when(bookService.findByIsbn("9781234567890")).thenReturn(Optional.of(book1));
+
+        ResponseEntity<Book> response = controller.findByIsbn("9781234567890");
+
+        assertEquals(null, "200 OK", response.getStatusCode().toString());
+        assertEquals(null, "TDD", response.getBody().getTitle());
+        verify(bookService, times(1)).findByIsbn("9781234567890");
+    }
+
+    @Test
+    public void testFindBookByIsbnNotFound() {
+        when(bookService.findByIsbn("0000000000000")).thenReturn(Optional.empty());
+
+        ResponseEntity<Book> response = controller.findByIsbn("0000000000000");
+
+        assertEquals(null, "404 NOT_FOUND", response.getStatusCode().toString());
+        verify(bookService, times(1)).findByIsbn("0000000000000");
+    }
+
+    @Test
+    public void testFindBooksByTitle() {
+        when(bookService.findByTitle("TDD")).thenReturn(Arrays.asList(book1, book2));
+
+        ResponseEntity<List<Book>> response = controller.findByTitle("TDD");
+
+        assertEquals(null, "200 OK", response.getStatusCode().toString());
+        assertEquals(null, 2, response.getBody().size());
+        verify(bookService, times(1)).findByTitle("TDD");
+    }
+
+    @Test
+    public void testFindBooksByTitleNotFound() {
+        when(bookService.findByTitle("Unknown")).thenReturn(List.of());
+
+        ResponseEntity<List<Book>> response = controller.findByTitle("Unknown");
+
+        assertEquals(null, "200 OK", response.getStatusCode().toString());
+        assertEquals(null, 0, response.getBody().size());
+        verify(bookService, times(1)).findByTitle("Unknown");
+    }
+
+    @Test
+    public void testFindBooksByAuthor() {
+        when(bookService.findByAuthor("Benjamin Doe")).thenReturn(Arrays.asList(book, book2));
+
+        ResponseEntity<List<Book>> response = controller.findByAuthor("Benjamin Aubert");
+
+        assertEquals(null, "200 OK", response.getStatusCode().toString());
+        assertEquals(null, 2, response.getBody().size());
+        verify(bookService, times(1)).findByAuthor("Benjamin Aubert");
+    }
+
+    @Test
+    public void testFindBooksByAuthorNotFound() {
+        when(bookService.findByAuthor("Unknown Author")).thenReturn(List.of());
+
+        ResponseEntity<List<Book>> response = controller.findByAuthor("Unknown Author");
+
+        assertEquals(null, "200 OK", response.getStatusCode().toString());
+        assertEquals(null, 0, response.getBody().size());
+        verify(bookService, times(1)).findByAuthor("Unknown Author");
     }
 
 }
